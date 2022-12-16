@@ -26,7 +26,7 @@ export default class NewBill {
       document.getElementById("error-message").classList.remove("off")
       document.getElementById("error-message").classList.add("on")
     }else{
-      document.getElementById("btn-send-bill").setAttribute("disabled", false)
+      document.getElementById("btn-send-bill").removeAttribute("disabled")
       document.getElementById("error-message").classList.remove("on")
       document.getElementById("error-message").classList.add("off")
     }
@@ -72,6 +72,7 @@ export default class NewBill {
   }
 
   // not need to cover this function by tests
+  /* istanbul ignore next */
   updateBill = (bill) => {
     if (this.store) {
       this.store
