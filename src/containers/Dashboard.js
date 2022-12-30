@@ -1,9 +1,9 @@
-import { formatDate } from '../app/format.js'
-import DashboardFormUI from '../views/DashboardFormUI.js'
 import BigBilledIcon from '../assets/svg/big_billed.js'
+import DashboardFormUI from '../views/DashboardFormUI.js'
+import Logout from "./Logout.js"
 import { ROUTES_PATH } from '../constants/routes.js'
 import USERS_TEST from '../constants/usersTest.js'
-import Logout from "./Logout.js"
+import { formatDate } from '../app/format.js'
 
 export const filteredBills = (data, status) => {
   return (data && data.length) ?
@@ -86,9 +86,10 @@ export default class {
   }
 
   handleEditTicket(e, bill, bills) {
+    // e.stopImmediatePropagation();
     if (this.counter === undefined || this.id !== bill.id) this.counter = 0
     if (this.id === undefined || this.id !== bill.id) this.id = bill.id
-    if (this.counter % 2 === 0) {
+    if (this.counter %2 === 0) {
       bills.forEach(b => {
         $(`#open-bill${b.id}`).css({ background: '#0D5AE5' })
       })
@@ -131,6 +132,7 @@ export default class {
   }
 
   handleShowTickets(e, bills, index) {
+    e.stopImmediatePropagation();
     if (this.counter === undefined || this.index !== index) this.counter = 0
     if (this.index === undefined || this.index !== index) this.index = index
     if (this.counter % 2 === 0) {
