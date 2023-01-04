@@ -82,7 +82,7 @@ describe("Given I am connected as an employee", () => {
 
         const newBillForm = screen.getByTestId("form-new-bill");
 
-        const handleSubmit = jest.fn((e) => newBill.handleSubmit);
+        const submitSpy = jest.spyOn(newBill, "handleSubmit");
         const imageInput = screen.getByTestId("file");
 
         const file = getFile(inputData.fileName, ["image/jpg"])
@@ -110,17 +110,16 @@ describe("Given I am connected as an employee", () => {
 
         // On s'assure que le formulaire est soumettable
         const submitButton = screen.getByTestId("btn-submit" );
-        console.log(submitButton)
         expect(submitButton.type).toBe("submit");
 
         // On soumet le formulaire
-        newBillForm.addEventListener("click", handleSubmit);
-        fireEvent.click(submitButton);
+        newBillForm.addEventListener("submit", newBill.handleSubmit)
+        fireEvent.submit(newBillForm);
 
-        expect(handleSubmit).toHaveBeenCalled();
+        expect(submitSpy).toHaveBeenCalled();
 
         // On s'assure qu'on est bien renvoyé sur la page Bills
-        // expect(screen.getByText(/Mes notes de frais/i)).toBeVisible();
+        expect(screen.getByText("Mes notes de frais")).toBeVisible();
       });
 
     })

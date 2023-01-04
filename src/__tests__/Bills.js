@@ -6,9 +6,11 @@ import "@testing-library/jest-dom/extend-expect";
 
 import {screen, waitFor} from "@testing-library/dom"
 
+import Bill from "../containers/Bills.js"
 import BillsUI from "../views/BillsUI.js"
 import { ROUTES_PATH } from "../constants/routes.js";
 import { bills } from "../fixtures/bills.js"
+import { fireEvent } from "@testing-library/dom";
 import {localStorageMock} from "../__mocks__/localStorage.js";
 import mockStore from "../__mocks__/store"
 import router from "../app/Router.js";
@@ -46,6 +48,21 @@ describe("Given I am connected as an employee", () => {
       document.body.innerHTML = BillsUI({ data: bills })
       const contentPending  = bills[0].status
       expect(contentPending).toEqual("pending")
+    })
+
+    describe("When i click on eyes", () => {
+      test("Then modal should apear on screen" ,() => {
+        const bill = new Bill({
+          document,
+          onNavigate,
+          store: mockStore,
+          localStorage: window.localStorage,
+        });
+        const eyeIcon = screen.getAllByTestId("icon-eye")[0];
+        eyeIcon.addEventListener("click", bill.handleClickIconEye)
+        fireEvent.click(eyeIcon)
+        expect(screen.getByText("Justificatif")).toBeVisible()
+      })
     })
   })
 })
