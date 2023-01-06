@@ -20,16 +20,6 @@ export default class NewBill {
     const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
     const filePath = e.target.value.split(/\\/g)
     const fileName = filePath[filePath.length-1]
-    if(!(fileName.endsWith("jpg") || fileName.endsWith("jpeg") || fileName.endsWith("png"))){
-      console.log("error : bad format picture")
-      document.getElementById("btn-send-bill").setAttribute("disabled", true)
-      document.getElementById("error-message").classList.remove("off")
-      document.getElementById("error-message").classList.add("on")
-    }else{
-      document.getElementById("btn-send-bill").removeAttribute("disabled")
-      document.getElementById("error-message").classList.remove("on")
-      document.getElementById("error-message").classList.add("off")
-    }
     const formData = new FormData()
     const email = JSON.parse(localStorage.getItem("user")).email
     formData.append('file', file)
@@ -72,7 +62,6 @@ export default class NewBill {
   }
 
   // not need to cover this function by tests
-  /* istanbul ignore next */
   updateBill = (bill) => {
     if (this.store) {
       this.store
