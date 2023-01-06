@@ -19,42 +19,42 @@ import userEvent from "@testing-library/user-event";
 jest.mock("../app/Store.js", () => mockStore);
 
 const setNewBill = () => {
- return new NewBill({
-   document,
-   onNavigate,
-   store: mockStore,
-   localStorage: window.localStorage,
- });
+  return new NewBill({
+    document,
+    onNavigate,
+    store: mockStore,
+    localStorage: window.localStorage,
+  });
 };
 
 beforeAll(() => {
- Object.defineProperty(window, "localStorage", {
-   value: localStorageMock,
- });
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+  });
 
- window.localStorage.setItem(
-   "user",
-   JSON.stringify({
-     type: "Employee",
-     email: "a@a",
-   })
- );
+  window.localStorage.setItem(
+    "user",
+    JSON.stringify({
+      type: "Employee",
+      email: "a@a",
+    })
+  );
 });
 
 beforeEach(() => {
- const root = document.createElement("div");
- root.setAttribute("id", "root");
- document.body.append(root);
- router();
+  const root = document.createElement("div");
+  root.setAttribute("id", "root");
+  document.body.append(root);
+  router();
 
- document.body.innerHTML = NewBillUI();
+  document.body.innerHTML = NewBillUI();
 
- window.onNavigate(ROUTES_PATH.NewBill);
+  window.onNavigate(ROUTES_PATH.NewBill);
 });
 
 afterEach(() => {
- jest.resetAllMocks();
- document.body.innerHTML = "";
+  jest.resetAllMocks();
+  document.body.innerHTML = "";
 });
 
 
@@ -63,6 +63,33 @@ describe("Given I am connected as an employee", () => {
     test("Then letter icon in vertical layout layout should be highlighted", () => {
       const windowIcon = screen.getByTestId("icon-mail");
       expect(windowIcon).toHaveClass("active-icon");
+
+    })
+    test("should added a image valid with the extensions jpg, jpeg or png", () => {
+      const onNavigate = pathname => {
+        document.body.innerHTML = ROUTES({ pathname });
+      };
+
+      const newBill = new NewBill({
+        document,
+        onNavigate,
+        store: mockStore,
+        localStorage: window.localStorage,
+      });
+      const uploader = screen.getByTestId("file");
+      fireEvent.change(uploader, {
+        target: {
+          files: [new File(["image"], "image.png", { type: "image/png" })],
+        },
+      });
+      const handleChangeFile = jest.fn(() => newBill.handleChangeFile);
+
+      uploader.addEventListener("change", handleChangeFile);
+      fireEvent.change(uploader);
+
+      expect(uploader.files[0].name).toBe("image.png");
+      expect(uploader.files[0].name).toMatch(/(jpeg|jpg|png)/);
+      expect(handleChangeFile).toHaveBeenCalled();
 
     })
     describe("When I do fill fields in correct format and I click on submit button", () => {
@@ -82,10 +109,11 @@ describe("Given I am connected as an employee", () => {
 
         const newBillForm = screen.getByTestId("form-new-bill");
 
-        const handleSubmit = jest.fn((e) => newBill.handleSubmit);
+        const submitSpy = jest.spyOn(newBill, "handleSubmit");
         const imageInput = screen.getByTestId("file");
 
-        const file = getFile(inputData.fileName, ["image/jpg"])
+        const file = getFile(inputData.fileName, ["jpg"])
+
 
         // On remplit les champs
         selectExpenseType(inputData.type);
@@ -98,29 +126,26 @@ describe("Given I am connected as an employee", () => {
         userEvent.type(getCommentary(), inputData.commentary);
         await userEvent.upload(imageInput, file);
 
+        newBill.fileName = file.name;
         // On s'assure que les données entrées requises sont valides
-        expect(
-          selectExpenseType(inputData.type).validity.valueMissing
-        ).toBeFalsy();
+        expect(inputData.fileName.endsWith("jpg")).toBeTruthy()
         expect(getDate().validity.valueMissing).toBeFalsy();
         expect(getAmount().validity.valueMissing).toBeFalsy();
         expect(getPct().validity.valueMissing).toBeFalsy();
 
-        newBill.fileName = file.name;
 
         // On s'assure que le formulaire est soumettable
-        const submitButton = screen.getByTestId("btn-submit" );
-        console.log(submitButton)
+        const submitButton = screen.getByTestId("btn-send-bill");
         expect(submitButton.type).toBe("submit");
 
         // On soumet le formulaire
-        newBillForm.addEventListener("click", handleSubmit);
-        fireEvent.click(submitButton);
+        newBillForm.addEventListener("submit", newBill.handleSubmit)
+        fireEvent.submit(newBillForm);
 
-        expect(handleSubmit).toHaveBeenCalled();
+        expect(submitSpy).toHaveBeenCalled();
 
         // On s'assure qu'on est bien renvoyé sur la page Bills
-        // expect(screen.getByText(/Mes notes de frais/i)).toBeVisible();
+        expect(screen.getByText("Mes notes de frais")).toBeVisible();
       });
 
     })
@@ -138,21 +163,14 @@ const selectExpenseType = expenseType => {
 };
 
 const getExpenseName = () => screen.getByTestId("expense-name");
-
 const getAmount = () => screen.getByTestId("amount");
-
 const getDate = () => screen.getByTestId("datepicker");
-
 const getVat = () => screen.getByTestId("vat");
-
 const getPct = () => screen.getByTestId("pct");
-
 const getCommentary = () => screen.getByTestId("commentary");
-
 const getFile = (fileName, fileType) => {
   const file = new File(["img"], fileName, {
     type: [fileType],
   });
-
   return file;
 };

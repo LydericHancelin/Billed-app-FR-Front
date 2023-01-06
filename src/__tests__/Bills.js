@@ -6,12 +6,15 @@ import "@testing-library/jest-dom/extend-expect";
 
 import {screen, waitFor} from "@testing-library/dom"
 
+import Bills from "../containers/Bills.js"
 import BillsUI from "../views/BillsUI.js"
 import { ROUTES_PATH } from "../constants/routes.js";
 import { bills } from "../fixtures/bills.js"
+import { fireEvent } from "@testing-library/dom";
 import {localStorageMock} from "../__mocks__/localStorage.js";
 import mockStore from "../__mocks__/store"
 import router from "../app/Router.js";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("../app/Store.js", () => mockStore)
 
@@ -47,6 +50,44 @@ describe("Given I am connected as an employee", () => {
       const contentPending  = bills[0].status
       expect(contentPending).toEqual("pending")
     })
+
+    describe("When I click on the icon eye", () => {
+      test("A modal should open", () => {
+        Object.defineProperty(window, "localStorage", {
+          value: localStorageMock,
+        });
+        window.localStorage.setItem(
+          "user",
+          JSON.stringify({
+            type: "Employee",
+          })
+        );
+
+        document.body.innerHTML = BillsUI({ data: bills });
+
+        const store = null;
+        const newBills = new Bills({
+          document,
+          onNavigate,
+          store,
+          localStorage: window.localStorage,
+        });
+
+        // Icon EYE
+        const iconEye = screen.getAllByTestId("icon-eye")[0];
+
+        const handleClickIconEye = jest.fn(() =>
+          newBills.handleClickIconEye(iconEye)
+        );
+
+        iconEye.addEventListener("click", handleClickIconEye);
+        userEvent.click(iconEye);
+        expect(handleClickIconEye).toHaveBeenCalledTimes(1);
+
+        const modale = screen.getByTestId("modalFile");
+        expect(modale).toBeTruthy();
+      });
+    });
   })
 })
 
