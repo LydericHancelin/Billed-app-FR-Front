@@ -7,10 +7,10 @@ import "@testing-library/jest-dom";
 import { ROUTES, ROUTES_PATH } from "../constants/routes.js";
 import { fireEvent, screen, within } from "@testing-library/dom";
 
+import BillsUI from "../views/BillsUI.js";
 import NewBill from "../containers/NewBill.js";
 import NewBillUI from "../views/NewBillUI.js";
 import { bills } from "../fixtures/bills.js";
-import { get } from "jquery";
 import { localStorageMock } from "../__mocks__/localStorage.js";
 import mockStore from "../__mocks__/store.js";
 import router from "../app/Router.js";
@@ -92,8 +92,10 @@ describe("Given I am connected as an employee", () => {
       expect(handleChangeFile).toHaveBeenCalled();
 
     })
+
+    //TESTS d'intégration POST
     describe("When I do fill fields in correct format and I click on submit button", () => {
-      test("Then the submission process should work properly, and I should be sent on the Bills Page", async () => {
+      test("create a new bill from mock API POST", async () => {
         const onNavigate = pathname => {
           document.body.innerHTML = ROUTES({ pathname });
         };
@@ -106,14 +108,10 @@ describe("Given I am connected as an employee", () => {
         });
 
         const inputData = bills[0];
-
         const newBillForm = screen.getByTestId("form-new-bill");
-
         const submitSpy = jest.spyOn(newBill, "handleSubmit");
         const imageInput = screen.getByTestId("file");
-
         const file = getFile(inputData.fileName, ["jpg"])
-
 
         // On remplit les champs
         selectExpenseType(inputData.type);
@@ -127,6 +125,7 @@ describe("Given I am connected as an employee", () => {
         await userEvent.upload(imageInput, file);
 
         newBill.fileName = file.name;
+
         // On s'assure que les données entrées requises sont valides
         expect(inputData.fileName.endsWith("jpg")).toBeTruthy()
         expect(getDate().validity.valueMissing).toBeFalsy();
@@ -146,12 +145,27 @@ describe("Given I am connected as an employee", () => {
 
         // On s'assure qu'on est bien renvoyé sur la page Bills
         expect(screen.getByText("Mes notes de frais")).toBeVisible();
+
+
+      });
+      test("Then it fails with a 404 message error", async () => {
+        const html = BillsUI({ error: "Erreur 404" });
+        document.body.innerHTML = html;
+        const message = await screen.getByText(/Erreur 404/);
+        expect(message).toBeTruthy();
+      });
+      test("Then it fails with a 500 message error", async () => {
+        const html = BillsUI({ error: "Erreur 500" });
+        document.body.innerHTML = html;
+        const message = await screen.getByText(/Erreur 500/);
+        expect(message).toBeTruthy();
       });
 
     })
 
   })
 });
+
 
 const selectExpenseType = expenseType => {
   const dropdown = screen.getByRole("combobox");
