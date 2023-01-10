@@ -93,7 +93,6 @@ describe("Given I am connected as an employee", () => {
 
     })
 
-    //TESTS d'intégration POST
     describe("When I do fill fields in correct format and I click on submit button", () => {
       test("create a new bill from mock API POST", async () => {
         const onNavigate = pathname => {
@@ -148,24 +147,154 @@ describe("Given I am connected as an employee", () => {
 
 
       });
-      test("Then it fails with a 404 message error", async () => {
-        const html = BillsUI({ error: "Erreur 404" });
-        document.body.innerHTML = html;
-        const message = await screen.getByText(/Erreur 404/);
-        expect(message).toBeTruthy();
-      });
-      test("Then it fails with a 500 message error", async () => {
-        const html = BillsUI({ error: "Erreur 500" });
-        document.body.innerHTML = html;
-        const message = await screen.getByText(/Erreur 500/);
-        expect(message).toBeTruthy();
-      });
 
     })
 
+
+    //Test d'intégration POST
+    describe('When I am on NewBill page, I filled in the form correctly and I clicked on submit button', () => {
+      test('Then a new bill should be created',()  => {
+        document.body.innerHTML = ''
+
+        document.body.innerHTML = NewBillUI()
+
+        const newBills = new NewBill({
+          document,
+          onNavigate,
+          store: mockStore,
+          localStorage: window.localStorage,
+        })
+
+        const handleChangeFile = jest.fn((e) => newBills.handleChangeFile(e))
+        const handleSubmit = jest.fn((e) => newBills.handleSubmit(e))
+
+        const fileInput = screen.getByTestId('file')
+        fileInput.addEventListener('change', handleChangeFile)
+        const file =  new File(["hello"], "hello.jpg", { type: "image/jpeg" })
+        userEvent.upload(fileInput, file)
+
+        const newBill = ({
+        type: 'Transports',
+        name:  'test99',
+        amount: '129',
+        date:  '05 Aoû. 2020',
+        vat: 20,
+        pct: 30,
+        commentary: 'Ceci est un test',
+        })
+
+        const typeNewBill = screen.getByTestId('expense-type')
+        const nameNewBill = screen.getByTestId('expense-name')
+        const amountNewBill = screen.getByTestId('amount')
+        const dateNewBill = screen.getByTestId('datepicker')
+        const vatNewBill = screen.getByTestId('vat')
+        const pctNewBill = screen.getByTestId('pct')
+        const commNewBill = screen.getByTestId('commentary')
+
+        fireEvent.change(typeNewBill, {target: { value: newBill.type }})
+        fireEvent.change(nameNewBill, {target: { value: newBill.name }})
+        fireEvent.change(amountNewBill, {target: { value: newBill.amount }})
+        fireEvent.change(dateNewBill, {target: { value: newBill.date }})
+        fireEvent.change(vatNewBill, {target: { value: newBill.vat }})
+        fireEvent.change(pctNewBill, {target: { value: newBill.pct }})
+        fireEvent.change(commNewBill, {target: { value: newBill.commentary }})
+
+        expect(handleChangeFile).toHaveBeenCalled()
+
+        const formNewBill = screen.getByTestId('form-new-bill')
+        formNewBill.addEventListener('submit', handleSubmit)
+        fireEvent.submit(formNewBill)
+
+        expect(handleSubmit).toHaveBeenCalled()
+      })
+    })
+    describe('When an error occurs on API', () => {
+      beforeEach(() => {
+        Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+        window.localStorage.setItem(
+          'user',
+          JSON.stringify({
+            type: 'Employee',
+            email: 'a@a',
+          })
+        )
+
+        document.body.innerHTML = NewBillUI()
+      })
+
+      test('Then new bill are added to the API but fetch fails with 404 message error', async () => {
+        const spyedMockStore = jest.spyOn(mockStore, 'bills')
+        spyedMockStore.mockImplementationOnce(() => {
+          return {
+            create: jest.fn().mockRejectedValue(new Error('Erreur 404')),
+          }
+        })
+        const onNavigate = (pathname) => {
+          document.body.innerHTML = ROUTES({ pathname, data: bills })
+        }
+        const newBill = new NewBill({
+          document,
+          onNavigate,
+          store: mockStore,
+          bills: bills,
+          localStorage: window.localStorage,
+        })
+        const fileInput = screen.getByTestId('file')
+
+        fireEvent.change(fileInput, {
+          target: {
+            files: [
+              new File(['test'], 'test.jpg', {
+                type: 'image/jpeg',
+              }),
+            ],
+          },
+        })
+
+        await spyedMockStore()
+        expect(spyedMockStore).toHaveBeenCalled()
+        expect(newBill.billId).toBeNull()
+        expect(newBill.fileUrl).toBeNull()
+        spyedMockStore.mockReset()
+        spyedMockStore.mockRestore()
+      })
+
+      test('Then new bill are added to the API but fetch fails with 500 message error', async () => {
+        const spyedMockStore = jest.spyOn(mockStore, 'bills')
+        spyedMockStore.mockImplementationOnce(() => {
+          return {
+            create: jest.fn().mockRejectedValue(new Error('Erreur 500')),
+          }
+        })
+        const onNavigate = (pathname) => {
+          document.body.innerHTML = ROUTES({ pathname, data: bills })
+        }
+        const newBill = new NewBill({
+          document,
+          onNavigate,
+          store: mockStore,
+          bills: bills,
+          localStorage: window.localStorage,
+        })
+        const fileInput = screen.getByTestId('file')
+        fireEvent.change(fileInput, {
+          target: {
+            files: [
+              new File(['test'], 'test.jpg', {
+                type: 'image/jpeg',
+              }),
+            ],
+          },
+        })
+
+        await spyedMockStore()
+        expect(spyedMockStore).toHaveBeenCalled()
+        expect(newBill.billId).toBeNull()
+        expect(newBill.fileUrl).toBeNull()
+      })
+    })
   })
 });
-
 
 const selectExpenseType = expenseType => {
   const dropdown = screen.getByRole("combobox");
